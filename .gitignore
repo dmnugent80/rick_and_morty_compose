@@ -1,0 +1,52 @@
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IntelliJ
+.idea/
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+.idea/**/modules.xml
+.idea/**/navEditor.xml
+.idea/**/assetWizardSettings.xml
+.idea/**/libraries
+.idea/caches
+.idea/gradle.xml
+.idea/misc.xml
+.idea/runConfigurations.xml
+
+# Kotlin / Jetpack Compose
+*.iml
+*.kts~
+*.tmp
+*.log
+
+# Local configuration files
+local.properties
+*.keystore
+*.jks
+*.signing.properties
+
+# Android build cache
+.cxx/
+captures/
+outputs/
+*.apk
+*.ap_
+*.aab
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Misc
+.idea_modules/
+.env
