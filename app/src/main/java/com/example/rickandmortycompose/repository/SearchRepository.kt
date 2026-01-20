@@ -4,6 +4,7 @@ import com.example.rickandmortycompose.model.Character
 
 interface SearchRepository {
     suspend fun searchCharacters(query: String, page: Int): SearchResult
+    suspend fun getCharacterById(id: Int): Character
 }
 
 data class SearchResult(

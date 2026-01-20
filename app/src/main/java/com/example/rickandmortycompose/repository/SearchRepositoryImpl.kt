@@ -11,22 +11,30 @@ class SearchRepositoryImpl @Inject constructor(
     override suspend fun searchCharacters(query: String, page: Int): SearchResult {
         val response = api.searchCharacters(query, page)
         val characters = response.results.map { dto ->
-            Character(
-                id = dto.id,
-                name = dto.name,
-                status = dto.status,
-                species = dto.species,
-                type = dto.type,
-                gender = dto.gender,
-                origin = dto.origin.name,
-                location = dto.location.name,
-                imageUrl = dto.image
-            )
+            dto.toCharacter()
         }
         return SearchResult(
             characters = characters,
             hasNextPage = response.info.next != null,
             nextPage = if (response.info.next != null) page + 1 else null
+        )
+    }
+
+    override suspend fun getCharacterById(id: Int): Character {
+        return api.getCharacter(id).toCharacter()
+    }
+
+    private fun com.example.rickandmortycompose.api.CharacterDto.toCharacter(): Character {
+        return Character(
+            id = id,
+            name = name,
+            status = status,
+            species = species,
+            type = type,
+            gender = gender,
+            origin = origin.name,
+            location = location.name,
+            imageUrl = image
         )
     }
 }

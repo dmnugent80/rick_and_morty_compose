@@ -1,6 +1,7 @@
 package com.example.rickandmortycompose.api
 
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface PeopleSearchApi {
@@ -9,6 +10,9 @@ interface PeopleSearchApi {
         @Query("name") query: String,
         @Query("page") page: Int = 1
     ): CharacterResponse
+
+    @GET("character/{id}")
+    suspend fun getCharacter(@Path("id") id: Int): CharacterDto
 }
 
 data class PageInfo(

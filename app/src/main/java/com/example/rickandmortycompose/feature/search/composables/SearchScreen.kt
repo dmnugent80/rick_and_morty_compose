@@ -1,6 +1,7 @@
 package com.example.rickandmortycompose.feature.search.composables
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,6 +56,7 @@ import com.example.rickandmortycompose.ui.theme.RickAndMortyComposeTheme
 fun SearchScreen(
     state: SearchViewState,
     onIntent: (SearchIntent) -> Unit,
+    onCharacterClick: (Int) -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
@@ -154,7 +156,10 @@ fun SearchScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             items(state.results, key = { it.id }) { item ->
-                SearchResultRow(item)
+                SearchResultRow(
+                    item = item,
+                    onClick = { onCharacterClick(item.id) }
+                )
                 HorizontalDivider(
                     modifier = Modifier,
                     thickness = DividerDefaults.Thickness,
@@ -182,10 +187,14 @@ fun SearchScreen(
 }
 
 @Composable
-fun SearchResultRow(item: SearchResultItem) {
+fun SearchResultRow(
+    item: SearchResultItem,
+    onClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
