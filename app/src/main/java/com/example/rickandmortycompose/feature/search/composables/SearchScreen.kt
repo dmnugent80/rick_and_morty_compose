@@ -1,5 +1,8 @@
 package com.example.rickandmortycompose.feature.search.composables
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -55,13 +58,15 @@ import com.example.rickandmortycompose.ui.theme.RickAndMortyBlue
 import com.example.rickandmortycompose.ui.theme.RickAndMortyComposeTheme
 import kotlinx.coroutines.flow.flowOf
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchScreen(
     state: SearchViewState,
     pagingItems: LazyPagingItems<SearchResultItem>,
     onIntent: (SearchIntent) -> Unit,
-    onCharacterClick: (Int) -> Unit = {}
+    onCharacterClick: (Int) -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -177,7 +182,9 @@ fun SearchScreen(
                 if (item != null) {
                     SearchResultRow(
                         item = item,
-                        onClick = { onCharacterClick(item.id) }
+                        onClick = { onCharacterClick(item.id) },
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope
                     )
                     HorizontalDivider(
                         modifier = Modifier,
@@ -217,10 +224,13 @@ fun SearchScreen(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchResultRow(
     item: SearchResultItem,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
     Row(
         modifier = Modifier
@@ -229,12 +239,25 @@ fun SearchResultRow(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val imageModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+            with(sharedTransitionScope) {
+                Modifier
+                    .sharedElement(
+                        rememberSharedContentState(key = "avatar-${item.id}"),
+                        animatedVisibilityScope = animatedVisibilityScope
+                    )
+                    .size(60.dp)
+                    .clip(CircleShape)
+            }
+        } else {
+            Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+        }
         AsyncImage(
             model = item.imageUrl,
             contentDescription = item.title,
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape),
+            modifier = imageModifier,
             contentScale = ContentScale.Crop
         )
         Spacer(modifier = Modifier.width(12.dp))
@@ -258,6 +281,7 @@ fun SearchResultRow(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview(showBackground = true)
 @Composable
 fun SearchScreenPreview() {

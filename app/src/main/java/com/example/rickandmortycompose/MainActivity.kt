@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,6 +22,7 @@ import com.example.rickandmortycompose.navigation.Search
 import com.example.rickandmortycompose.ui.theme.RickAndMortyComposeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,34 +32,40 @@ class MainActivity : ComponentActivity() {
             RickAndMortyComposeTheme {
                 val navController = rememberNavController()
 
-                NavHost(
-                    navController = navController,
-                    startDestination = Search
-                ) {
-                    composable<Search> {
-                        val viewModel: SearchViewModel = hiltViewModel()
-                        val state by viewModel.state.collectAsStateWithLifecycle()
-                        val pagingItems = viewModel.pagingData.collectAsLazyPagingItems()
+                SharedTransitionLayout {
+                    NavHost(
+                        navController = navController,
+                        startDestination = Search
+                    ) {
+                        composable<Search> {
+                            val viewModel: SearchViewModel = hiltViewModel()
+                            val state by viewModel.state.collectAsStateWithLifecycle()
+                            val pagingItems = viewModel.pagingData.collectAsLazyPagingItems()
 
-                        SearchScreen(
-                            state = state,
-                            pagingItems = pagingItems,
-                            onIntent = viewModel::handleIntent,
-                            onCharacterClick = { characterId ->
-                                navController.navigate(CharacterDetail(characterId))
-                            }
-                        )
-                    }
+                            SearchScreen(
+                                state = state,
+                                pagingItems = pagingItems,
+                                onIntent = viewModel::handleIntent,
+                                onCharacterClick = { characterId ->
+                                    navController.navigate(CharacterDetail(characterId))
+                                },
+                                sharedTransitionScope = this@SharedTransitionLayout,
+                                animatedVisibilityScope = this@composable
+                            )
+                        }
 
-                    composable<CharacterDetail> {
-                        val viewModel: DetailViewModel = hiltViewModel()
-                        val state by viewModel.state.collectAsStateWithLifecycle()
+                        composable<CharacterDetail> {
+                            val viewModel: DetailViewModel = hiltViewModel()
+                            val state by viewModel.state.collectAsStateWithLifecycle()
 
-                        DetailScreen(
-                            state = state,
-                            onBackClick = { navController.popBackStack() },
-                            onRetry = viewModel::retry
-                        )
+                            DetailScreen(
+                                state = state,
+                                onBackClick = { navController.popBackStack() },
+                                onRetry = viewModel::retry,
+                                sharedTransitionScope = this@SharedTransitionLayout,
+                                animatedVisibilityScope = this@composable
+                            )
+                        }
                     }
                 }
             }

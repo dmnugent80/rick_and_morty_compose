@@ -1,5 +1,8 @@
 package com.example.rickandmortycompose.feature.detail.composables
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,12 +43,14 @@ import com.example.rickandmortycompose.feature.detail.viewModel.DetailViewState
 import com.example.rickandmortycompose.model.Character
 import com.example.rickandmortycompose.ui.theme.RickAndMortyComposeTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun DetailScreen(
     state: DetailViewState,
     onBackClick: () -> Unit,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
     Scaffold(
         topBar = {
@@ -102,15 +107,24 @@ fun DetailScreen(
                 }
 
                 state.character != null -> {
-                    CharacterContent(character = state.character)
+                    CharacterContent(
+                        character = state.character,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope
+                    )
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun CharacterContent(character: Character) {
+private fun CharacterContent(
+    character: Character,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -118,12 +132,25 @@ private fun CharacterContent(character: Character) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val imageModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+            with(sharedTransitionScope) {
+                Modifier
+                    .sharedElement(
+                        rememberSharedContentState(key = "avatar-${character.id}"),
+                        animatedVisibilityScope = animatedVisibilityScope
+                    )
+                    .size(200.dp)
+                    .clip(RoundedCornerShape(16.dp))
+            }
+        } else {
+            Modifier
+                .size(200.dp)
+                .clip(RoundedCornerShape(16.dp))
+        }
         AsyncImage(
             model = character.imageUrl,
             contentDescription = character.name,
-            modifier = Modifier
-                .size(200.dp)
-                .clip(RoundedCornerShape(16.dp)),
+            modifier = imageModifier,
             contentScale = ContentScale.Crop
         )
 
@@ -199,6 +226,7 @@ private fun InfoCard(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview(showBackground = true)
 @Composable
 fun DetailScreenPreview() {
@@ -223,6 +251,7 @@ fun DetailScreenPreview() {
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview(showBackground = true)
 @Composable
 fun DetailScreenLoadingPreview() {
@@ -235,6 +264,7 @@ fun DetailScreenLoadingPreview() {
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview(showBackground = true)
 @Composable
 fun DetailScreenErrorPreview() {
