@@ -43,7 +43,7 @@ Intent → ViewModel → UseCase → Repository → API
 ### Dependency Injection
 
 Uses **Dagger Hilt** for DI. Modules defined in `di/`:
-- `NetworkModule.kt`: Provides Moshi, Retrofit, and PeopleSearchApi
+- `NetworkModule.kt`: Provides Moshi, Retrofit, and CharacterSearchApi
 - `RepositoryModule.kt`: Binds SearchRepository interface to implementation
 
 Key annotations:
