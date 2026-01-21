@@ -1,8 +1,9 @@
 package com.example.rickandmortycompose.navigation
 
-object NavRoutes {
-    const val SEARCH = "search"
-    const val CHARACTER_DETAIL = "character/{characterId}"
+import kotlinx.serialization.Serializable
 
-    fun characterDetail(characterId: Int): String = "character/$characterId"
-}
+@Serializable
+object Search
+
+@Serializable
+data class CharacterDetail(val characterId: Int)
