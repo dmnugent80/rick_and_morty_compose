@@ -32,6 +32,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,6 +49,7 @@ import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
+import com.example.rickandmortycompose.R
 import com.example.rickandmortycompose.feature.search.viewModel.SearchViewState
 import com.example.rickandmortycompose.ui.theme.RickAndMortyBlue
 import com.example.rickandmortycompose.ui.theme.RickAndMortyComposeTheme
@@ -71,13 +74,16 @@ fun SearchScreen(
     ) {
 
         TopAppBar(
-            modifier = Modifier.background(Color.Transparent),
             title = {
                 Text(
                     "Rick And Morty Search",
                     color = MaterialTheme.colorScheme.primary
                 )
             },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = MaterialTheme.colorScheme.background
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -138,7 +144,7 @@ fun SearchScreen(
             }
         ) {
             Text(
-                text = "See all",
+                text = stringResource(R.string.see_all),
                 color = RickAndMortyBlue,
                 style = MaterialTheme.typography.labelLarge
             )
@@ -154,7 +160,7 @@ fun SearchScreen(
         if (pagingItems.loadState.refresh is LoadState.Error) {
             val error = (pagingItems.loadState.refresh as LoadState.Error).error
             Text(
-                text = error.localizedMessage ?: "An error occurred",
+                text = error.localizedMessage ?: stringResource(R.string.an_error_occurred),
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(16.dp)
             )
@@ -201,7 +207,7 @@ fun SearchScreen(
                 item {
                     val error = (pagingItems.loadState.append as LoadState.Error).error
                     Text(
-                        text = error.localizedMessage ?: "Failed to load more",
+                        text = error.localizedMessage ?: stringResource(R.string.failed_to_load_more),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(16.dp)
                     )
