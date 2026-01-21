@@ -1,6 +1,6 @@
 package com.example.rickandmortycompose.di
 
-import com.example.rickandmortycompose.api.PeopleSearchApi
+import com.example.rickandmortycompose.api.CharacterSearchApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -35,7 +35,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun providePeopleSearchApi(retrofit: Retrofit): PeopleSearchApi {
-        return retrofit.create(PeopleSearchApi::class.java)
+    fun provideCharacterSearchApi(retrofit: Retrofit): CharacterSearchApi {
+        return retrofit.create(CharacterSearchApi::class.java)
     }
 }

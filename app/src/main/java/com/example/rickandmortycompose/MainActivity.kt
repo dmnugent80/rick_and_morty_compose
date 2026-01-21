@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -35,9 +36,11 @@ class MainActivity : ComponentActivity() {
                     composable<Search> {
                         val viewModel: SearchViewModel = hiltViewModel()
                         val state by viewModel.state.collectAsStateWithLifecycle()
+                        val pagingItems = viewModel.pagingData.collectAsLazyPagingItems()
 
                         SearchScreen(
                             state = state,
+                            pagingItems = pagingItems,
                             onIntent = viewModel::handleIntent,
                             onCharacterClick = { characterId ->
                                 navController.navigate(CharacterDetail(characterId))

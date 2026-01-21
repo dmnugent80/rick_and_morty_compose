@@ -5,7 +5,6 @@ import com.example.rickandmortycompose.api.CharacterResponse
 import com.example.rickandmortycompose.api.LocationDto
 import com.example.rickandmortycompose.api.PageInfo
 import com.example.rickandmortycompose.model.Character
-import com.example.rickandmortycompose.repository.SearchResult
 
 object CharacterFixtures {
 
@@ -79,16 +78,6 @@ object CharacterFixtures {
     ) = CharacterResponse(
         info = info,
         results = characters
-    )
-
-    fun createSearchResult(
-        characters: List<Character> = listOf(createCharacter()),
-        hasNextPage: Boolean = true,
-        nextPage: Int? = 2
-    ) = SearchResult(
-        characters = characters,
-        hasNextPage = hasNextPage,
-        nextPage = nextPage
     )
 
     val rickSanchez = createCharacter(

@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,12 +30,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,33 +42,25 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.example.rickandmortycompose.feature.search.viewModel.SearchViewState
+import com.example.rickandmortycompose.ui.theme.RickAndMortyBlue
 import com.example.rickandmortycompose.ui.theme.RickAndMortyComposeTheme
+import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     state: SearchViewState,
+    pagingItems: LazyPagingItems<SearchResultItem>,
     onIntent: (SearchIntent) -> Unit,
     onCharacterClick: (Int) -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
-    val listState = rememberLazyListState()
-
-    val shouldLoadMore by remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            val totalItems = listState.layoutInfo.totalItemsCount
-            lastVisibleItem >= totalItems - 3 && totalItems > 0 && state.hasMorePages && !state.isLoadingMore
-        }
-    }
-
-    LaunchedEffect(shouldLoadMore) {
-        if (shouldLoadMore) {
-            onIntent(SearchIntent.LoadMore)
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -144,30 +131,57 @@ fun SearchScreen(
             }
         }
 
+        TextButton(
+            onClick = {
+                onIntent(SearchIntent.SeeAll)
+                focusManager.clearFocus()
+            }
+        ) {
+            Text(
+                text = "See all",
+                color = RickAndMortyBlue,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (state.isLoading) {
+        if (state.isSearchActive && pagingItems.loadState.refresh is LoadState.Loading) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(16.dp))
         }
 
+        if (pagingItems.loadState.refresh is LoadState.Error) {
+            val error = (pagingItems.loadState.refresh as LoadState.Error).error
+            Text(
+                text = error.localizedMessage ?: "An error occurred",
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+
         LazyColumn(
-            state = listState,
             modifier = Modifier.fillMaxSize()
         ) {
-            items(state.results, key = { it.id }) { item ->
-                SearchResultRow(
-                    item = item,
-                    onClick = { onCharacterClick(item.id) }
-                )
-                HorizontalDivider(
-                    modifier = Modifier,
-                    thickness = DividerDefaults.Thickness,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                )
+            items(
+                count = pagingItems.itemCount,
+                key = { index -> pagingItems[index]?.id ?: index }
+            ) { index ->
+                val item = pagingItems[index]
+                if (item != null) {
+                    SearchResultRow(
+                        item = item,
+                        onClick = { onCharacterClick(item.id) }
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier,
+                        thickness = DividerDefaults.Thickness,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                    )
+                }
             }
 
-            if (state.isLoadingMore) {
+            if (pagingItems.loadState.append is LoadState.Loading) {
                 item {
                     Box(
                         modifier = Modifier
@@ -180,6 +194,17 @@ fun SearchScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
+                }
+            }
+
+            if (pagingItems.loadState.append is LoadState.Error) {
+                item {
+                    val error = (pagingItems.loadState.append as LoadState.Error).error
+                    Text(
+                        text = error.localizedMessage ?: "Failed to load more",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
         }
@@ -231,17 +256,44 @@ fun SearchResultRow(
 @Composable
 fun SearchScreenPreview() {
     RickAndMortyComposeTheme {
+        val previewItems = flowOf(
+            PagingData.from(
+                listOf(
+                    SearchResultItem(
+                        1,
+                        "Rick Sanchez",
+                        "Alive - Human",
+                        "Location: Citadel of Ricks",
+                        "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
+                    ),
+                    SearchResultItem(
+                        2,
+                        "Morty Smith",
+                        "Alive - Human",
+                        "Location: Citadel of Ricks",
+                        "https://rickandmortyapi.com/api/character/avatar/2.jpeg"
+                    ),
+                    SearchResultItem(
+                        3,
+                        "Summer Smith",
+                        "Alive - Human",
+                        "Location: Earth",
+                        "https://rickandmortyapi.com/api/character/avatar/3.jpeg"
+                    ),
+                    SearchResultItem(
+                        4,
+                        "Beth Smith",
+                        "Alive - Human",
+                        "Location: Earth",
+                        "https://rickandmortyapi.com/api/character/avatar/4.jpeg"
+                    ),
+                )
+            )
+        ).collectAsLazyPagingItems()
+
         SearchScreen(
-            state = SearchViewState(
-                query = "Rick",
-                results = listOf(
-                    SearchResultItem(1, "Rick Sanchez", "Alive - Human", "Location: Citadel of Ricks", "https://rickandmortyapi.com/api/character/avatar/1.jpeg"),
-                    SearchResultItem(2, "Morty Smith", "Alive - Human", "Location: Citadel of Ricks", "https://rickandmortyapi.com/api/character/avatar/2.jpeg"),
-                    SearchResultItem(3, "Summer Smith", "Alive - Human", "Location: Earth", "https://rickandmortyapi.com/api/character/avatar/3.jpeg"),
-                    SearchResultItem(4, "Beth Smith", "Alive - Human", "Location: Earth", "https://rickandmortyapi.com/api/character/avatar/4.jpeg"),
-                ),
-                hasMorePages = true
-            ),
+            state = SearchViewState(query = "Rick"),
+            pagingItems = previewItems,
             onIntent = {},
         )
     }
@@ -261,5 +313,5 @@ data class SearchResultItem(
 sealed interface SearchIntent {
     data class QueryChanged(val query: String) : SearchIntent
     data object SubmitSearch : SearchIntent
-    data object LoadMore : SearchIntent
+    data object SeeAll : SearchIntent
 }

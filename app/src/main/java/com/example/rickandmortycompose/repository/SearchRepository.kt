@@ -1,14 +1,10 @@
 package com.example.rickandmortycompose.repository
 
+import androidx.paging.PagingData
 import com.example.rickandmortycompose.model.Character
+import kotlinx.coroutines.flow.Flow
 
 interface SearchRepository {
-    suspend fun searchCharacters(query: String, page: Int): SearchResult
+    fun getCharactersPager(query: String?): Flow<PagingData<Character>>
     suspend fun getCharacterById(id: Int): Character
 }
-
-data class SearchResult(
-    val characters: List<Character>,
-    val hasNextPage: Boolean,
-    val nextPage: Int?
-)

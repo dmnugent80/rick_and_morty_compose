@@ -6,10 +6,10 @@ import com.example.rickandmortycompose.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class SearchCharactersUseCase @Inject constructor(
+class GetAllCharactersUseCase @Inject constructor(
     private val repository: SearchRepository
 ) {
-    operator fun invoke(query: String): Flow<PagingData<Character>> {
-        return repository.getCharactersPager(query)
+    operator fun invoke(): Flow<PagingData<Character>> {
+        return repository.getCharactersPager(query = null)
     }
 }

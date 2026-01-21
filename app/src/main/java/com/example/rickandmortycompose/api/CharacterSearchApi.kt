@@ -4,10 +4,10 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-interface PeopleSearchApi {
+interface CharacterSearchApi {
     @GET("character/")
     suspend fun searchCharacters(
-        @Query("name") query: String,
+        @Query("name") query: String? = null,
         @Query("page") page: Int = 1
     ): CharacterResponse
 

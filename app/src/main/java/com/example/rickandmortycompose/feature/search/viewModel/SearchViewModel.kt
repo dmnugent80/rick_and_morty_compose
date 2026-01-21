@@ -2,84 +2,72 @@ package com.example.rickandmortycompose.feature.search.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
 import com.example.rickandmortycompose.feature.search.composables.SearchIntent
 import com.example.rickandmortycompose.feature.search.composables.SearchResultItem
 import com.example.rickandmortycompose.model.Character
+import com.example.rickandmortycompose.usecase.GetAllCharactersUseCase
 import com.example.rickandmortycompose.usecase.SearchCharactersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
+private sealed interface SearchMode {
+    data object Idle : SearchMode
+    data object SeeAll : SearchMode
+    data class Search(val query: String) : SearchMode
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val searchCharactersUseCase: SearchCharactersUseCase
+    private val searchCharactersUseCase: SearchCharactersUseCase,
+    private val getAllCharactersUseCase: GetAllCharactersUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SearchViewState())
     val state: StateFlow<SearchViewState> = _state
 
-    private var currentPage = 1
-    private var currentQuery = ""
+    private val _searchMode = MutableStateFlow<SearchMode>(SearchMode.Idle)
+
+    val pagingData: Flow<PagingData<SearchResultItem>> = _searchMode
+        .flatMapLatest { mode ->
+            when (mode) {
+                SearchMode.Idle -> flowOf(PagingData.empty())
+                SearchMode.SeeAll -> getAllCharactersUseCase()
+                is SearchMode.Search -> searchCharactersUseCase(mode.query)
+            }.map { pagingData ->
+                pagingData.map { character -> character.toSearchResultItem() }
+            }
+        }
+        .cachedIn(viewModelScope)
 
     fun handleIntent(intent: SearchIntent) {
         when (intent) {
             is SearchIntent.QueryChanged ->
                 _state.value = _state.value.copy(query = intent.query)
 
-            SearchIntent.SubmitSearch ->
-                search(_state.value.query, reset = true)
-
-            SearchIntent.LoadMore ->
-                loadMore()
-        }
-    }
-
-    private fun search(query: String, reset: Boolean) {
-        if (query.isBlank()) return
-
-        if (reset) {
-            currentPage = 1
-            currentQuery = query
-        }
-
-        viewModelScope.launch {
-            _state.value = if (reset) {
-                _state.value.copy(isLoading = true, error = null, results = emptyList())
-            } else {
-                _state.value.copy(isLoadingMore = true, error = null)
+            SearchIntent.SubmitSearch -> {
+                val query = _state.value.query
+                if (query.isNotBlank()) {
+                    _state.value = _state.value.copy(isSearchActive = true)
+                    _searchMode.value = SearchMode.Search(query)
+                }
             }
 
-            runCatching { searchCharactersUseCase(query, currentPage) }
-                .onSuccess { result ->
-                    val items = result.characters.map { character ->
-                        character.toSearchResultItem()
-                    }
-                    val newResults = if (reset) items else _state.value.results + items
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        isLoadingMore = false,
-                        results = newResults,
-                        hasMorePages = result.hasNextPage
-                    )
-                    if (result.nextPage != null) {
-                        currentPage = result.nextPage
-                    }
-                }
-                .onFailure { e ->
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        isLoadingMore = false,
-                        error = e.message ?: "Unknown error"
-                    )
-                }
+            SearchIntent.SeeAll -> {
+                _state.value = _state.value.copy(isSearchActive = true)
+                _searchMode.value = SearchMode.SeeAll
+            }
         }
-    }
-
-    private fun loadMore() {
-        if (_state.value.isLoadingMore || !_state.value.hasMorePages) return
-        search(currentQuery, reset = false)
     }
 
     private fun Character.toSearchResultItem(): SearchResultItem {

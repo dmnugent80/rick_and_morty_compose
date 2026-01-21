@@ -1,30 +1,34 @@
 package com.example.rickandmortycompose.repository
 
-import com.example.rickandmortycompose.api.PeopleSearchApi
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import com.example.rickandmortycompose.api.CharacterDto
+import com.example.rickandmortycompose.api.CharacterSearchApi
 import com.example.rickandmortycompose.model.Character
+import com.example.rickandmortycompose.paging.CharacterPagingSource
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class SearchRepositoryImpl @Inject constructor(
-    private val api: PeopleSearchApi
+    private val api: CharacterSearchApi
 ) : SearchRepository {
 
-    override suspend fun searchCharacters(query: String, page: Int): SearchResult {
-        val response = api.searchCharacters(query, page)
-        val characters = response.results.map { dto ->
-            dto.toCharacter()
-        }
-        return SearchResult(
-            characters = characters,
-            hasNextPage = response.info.next != null,
-            nextPage = if (response.info.next != null) page + 1 else null
-        )
+    override fun getCharactersPager(query: String?): Flow<PagingData<Character>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = { CharacterPagingSource(api, query) }
+        ).flow
     }
 
     override suspend fun getCharacterById(id: Int): Character {
         return api.getCharacter(id).toCharacter()
     }
 
-    private fun com.example.rickandmortycompose.api.CharacterDto.toCharacter(): Character {
+    private fun CharacterDto.toCharacter(): Character {
         return Character(
             id = id,
             name = name,
