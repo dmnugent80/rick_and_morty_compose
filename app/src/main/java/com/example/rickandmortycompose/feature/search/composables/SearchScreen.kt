@@ -51,6 +51,7 @@ import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import com.example.rickandmortycompose.R
 import com.example.rickandmortycompose.feature.search.viewModel.SearchViewState
@@ -176,10 +177,9 @@ fun SearchScreen(
         ) {
             items(
                 count = pagingItems.itemCount,
-                key = { index -> pagingItems[index]?.id ?: index }
+                key = pagingItems.itemKey { it.id }
             ) { index ->
-                val item = pagingItems[index]
-                if (item != null) {
+                pagingItems[index]?.let { item ->
                     SearchResultRow(
                         item = item,
                         onClick = { onCharacterClick(item.id) },
@@ -187,7 +187,6 @@ fun SearchScreen(
                         animatedVisibilityScope = animatedVisibilityScope
                     )
                     HorizontalDivider(
-                        modifier = Modifier,
                         thickness = DividerDefaults.Thickness,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                     )

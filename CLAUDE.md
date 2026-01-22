@@ -35,7 +35,13 @@ Intent → ViewModel → UseCase → Repository → API
 ### Key Layers
 
 - **API Layer** (`api/`): Retrofit interfaces and response DTOs. Uses https://rickandmortyapi.com/ Rick And Morty API.
-- **Repository Layer** (`repository/`): Maps API responses to domain models, provides `PagingData` flows.
+- **Database Layer** (`db/`): Room database for offline caching of "See All" results.
+  - `CharacterEntity`: Room entity matching domain model
+  - `RemoteKeyEntity`: Pagination state tracking for RemoteMediator
+  - `CharacterDao`: PagingSource + CRUD operations
+  - `RemoteKeyDao`: Remote key operations
+  - `AppDatabase`: Room database definition
+- **Repository Layer** (`repository/`): Maps API responses to domain models, provides `PagingData` flows. Uses dual strategy for offline support.
 - **UseCase Layer** (`usecase/`): Business logic wrappers around repositories.
   - `SearchCharactersUseCase`: Query-based character search with paging
   - `GetAllCharactersUseCase`: Fetch all characters with paging
@@ -72,12 +78,24 @@ Uses `SharedTransitionLayout` (experimental API) for character avatar animations
 - Passed to composables as `sharedTransitionScope` and `animatedVisibilityScope`
 - Applied via `sharedElement()` modifier with key `"avatar-${item.id}"`
 
-### Paging
+### Paging & Offline Support
 
-Implements Paging 3 library:
-- `CharacterPagingSource.kt`: PagingSource implementation for API pagination
-- `SearchRepositoryImpl`: Creates Pager with `PagingConfig(pageSize = 20)`
-- ViewModels expose `Flow<PagingData<SearchResultItem>>`
+Implements Paging 3 library with dual strategy for offline support:
+
+**"See All" Mode (Offline-capable):**
+- Uses `CharacterRemoteMediator` with Room as single source of truth
+- `RemoteMediator` fetches from network → writes to Room → Room `PagingSource` emits to UI
+- Data persists across app restarts, works offline after initial load
+
+**Search Mode (Network-only):**
+- Uses `CharacterPagingSource` for direct API pagination
+- No caching (search results are transient)
+
+Key files:
+- `CharacterPagingSource.kt`: Network-only PagingSource for search
+- `CharacterRemoteMediator.kt`: Coordinates network fetches with Room writes
+- `SearchRepositoryImpl`: Dual strategy based on `query == null` (See All) vs `query != null` (Search)
+- ViewModels expose `Flow<PagingData<Character>>`
 
 ### UI Components
 
@@ -89,6 +107,7 @@ Implements Paging 3 library:
 
 Uses **Dagger Hilt** for DI. Modules defined in `di/`:
 - `NetworkModule.kt`: Provides Moshi, Retrofit, and CharacterSearchApi
+- `DatabaseModule.kt`: Provides Room database, CharacterDao, and RemoteKeyDao
 - `RepositoryModule.kt`: Binds SearchRepository interface to implementation
 
 Key annotations:

@@ -1,9 +1,13 @@
 package com.example.rickandmortycompose.repository
 
 import com.example.rickandmortycompose.api.CharacterSearchApi
+import com.example.rickandmortycompose.db.AppDatabase
+import com.example.rickandmortycompose.db.CharacterDao
+import com.example.rickandmortycompose.db.RemoteKeyDao
 import com.example.rickandmortycompose.fixtures.CharacterFixtures
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -14,12 +18,20 @@ import org.junit.Test
 class SearchRepositoryImplTest {
 
     private lateinit var api: CharacterSearchApi
+    private lateinit var database: AppDatabase
+    private lateinit var characterDao: CharacterDao
+    private lateinit var remoteKeyDao: RemoteKeyDao
     private lateinit var repository: SearchRepositoryImpl
 
     @Before
     fun setup() {
         api = mockk()
-        repository = SearchRepositoryImpl(api)
+        database = mockk()
+        characterDao = mockk()
+        remoteKeyDao = mockk()
+        every { database.characterDao() } returns characterDao
+        every { database.remoteKeyDao() } returns remoteKeyDao
+        repository = SearchRepositoryImpl(api, database)
     }
 
     @Test
