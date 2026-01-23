@@ -35,6 +35,9 @@ Intent → ViewModel → UseCase → Repository → API
 ### Key Layers
 
 - **API Layer** (`api/`): Retrofit interfaces and response DTOs. Uses https://rickandmortyapi.com/ Rick And Morty API.
+  - `RetryInterceptor`: OkHttp interceptor with exponential backoff (3 retries, 1s base delay with jitter). Retries on 5xx errors and IOExceptions.
+- **Network Layer** (`network/`): Connectivity monitoring for offline support.
+  - `ConnectivityObserver`: Interface and implementation using Android ConnectivityManager with NetworkCallback. Exposes `isOnline: StateFlow<Boolean>`.
 - **Database Layer** (`db/`): Room database for offline caching of "See All" results.
   - `CharacterEntity`: Room entity matching domain model
   - `RemoteKeyEntity`: Pagination state tracking for RemoteMediator
@@ -52,14 +55,14 @@ Intent → ViewModel → UseCase → Repository → API
 ### Features
 
 **Search Feature** (`feature/search/`)
-- `SearchScreen.kt`: Main list UI with search bar, "See All" button, paginated results
-- `SearchViewModel.kt`: Uses `flatMapLatest` to switch between modes (Idle, SeeAll, Search)
+- `SearchScreen.kt`: Main list UI with search bar, "See All" button, paginated results. Shows offline banner when disconnected.
+- `SearchViewModel.kt`: Uses `flatMapLatest` to switch between modes (Idle, SeeAll, Search). Combines state with `ConnectivityObserver` for offline awareness.
 - `SearchIntent`: Sealed interface with `QueryChanged`, `SubmitSearch`, `SeeAll` intents
-- `SearchViewState`: Data class with query state
+- `SearchViewState`: Data class with query state and `isOffline` flag
 
 **Detail Feature** (`feature/detail/`)
 - `DetailScreen.kt`: Character details in Info and Location cards
-- `DetailViewModel.kt`: Fetches single character by ID via `SavedStateHandle`
+- `DetailViewModel.kt`: Fetches single character by ID via `SavedStateHandle`. Falls back to cached Room data when offline.
 - `DetailShimmerContent.kt`: Skeleton loader with shimmer animation
 - `DetailViewState`: Sealed interface (Loading, Success, Error)
 
@@ -94,8 +97,35 @@ Implements Paging 3 library with dual strategy for offline support:
 Key files:
 - `CharacterPagingSource.kt`: Network-only PagingSource for search
 - `CharacterRemoteMediator.kt`: Coordinates network fetches with Room writes
-- `SearchRepositoryImpl`: Dual strategy based on `query == null` (See All) vs `query != null` (Search)
+- `SearchRepositoryImpl`: Dual strategy based on `query == null` (See All) vs `query != null` (Search). `getCharacterById()` tries Room first, falls back to API.
 - ViewModels expose `Flow<PagingData<Character>>`
+
+### Image Caching
+
+Uses **Coil** for image loading with OkHttp HTTP cache for offline support:
+- `RickAndMortyApplication` implements `ImageLoaderFactory` to provide custom ImageLoader
+- Shares the same OkHttpClient (with 50MB cache) used for API requests
+- Images are cached automatically via HTTP cache headers
+- `AsyncImage` composable used in SearchResultRow and DetailScreen
+
+### Offline Mode
+
+The app provides offline-first behavior when network is unavailable:
+
+**Connectivity Monitoring:**
+- `ConnectivityObserver` tracks real-time network status via `StateFlow<Boolean>`
+- ViewModels combine UI state with connectivity status
+
+**Offline Behavior:**
+- "See All" mode works offline using cached Room data
+- Detail page loads from Room cache when offline (if previously viewed)
+- Search is disabled offline (network-only, shows offline banner)
+- Images served from HTTP cache when offline
+
+**UI Indicators:**
+- Offline banner displayed at top of SearchScreen
+- Search field disabled when offline
+- Retry button available in offline banner
 
 ### UI Components
 
@@ -106,7 +136,7 @@ Key files:
 ### Dependency Injection
 
 Uses **Dagger Hilt** for DI. Modules defined in `di/`:
-- `NetworkModule.kt`: Provides Moshi, Retrofit, and CharacterSearchApi
+- `NetworkModule.kt`: Provides Moshi, Retrofit, CharacterSearchApi, OkHttpClient (with RetryInterceptor and 50MB HTTP cache), and ConnectivityObserver
 - `DatabaseModule.kt`: Provides Room database, CharacterDao, and RemoteKeyDao
 - `RepositoryModule.kt`: Binds SearchRepository interface to implementation
 
