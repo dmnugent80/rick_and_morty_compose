@@ -22,6 +22,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +35,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -92,6 +96,39 @@ fun SearchScreen(
             )
         )
 
+        // Offline Banner
+        if (state.isOffline) {
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.WifiOff,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.offline_banner_message),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = { pagingItems.refresh() }) {
+                        Text(
+                            text = stringResource(R.string.retry),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
@@ -104,22 +141,33 @@ fun SearchScreen(
                     onIntent(SearchIntent.QueryChanged(newQuery))
                 },
                 modifier = Modifier.weight(1f),
-                label = { Text("Search Characters") },
+                label = {
+                    Text(
+                        if (state.isOffline) stringResource(R.string.search_disabled_offline)
+                        else "Search Characters"
+                    )
+                },
                 singleLine = true,
+                enabled = !state.isOffline,
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
                     onSearch = {
-                        onIntent(SearchIntent.SubmitSearch)
-                        focusManager.clearFocus()
+                        if (!state.isOffline) {
+                            onIntent(SearchIntent.SubmitSearch)
+                            focusManager.clearFocus()
+                        }
                     }
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                     focusedLabelColor = MaterialTheme.colorScheme.primary,
                     unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     cursorColor = MaterialTheme.colorScheme.primary
                 )
             )
@@ -128,17 +176,29 @@ fun SearchScreen(
 
             IconButton(
                 onClick = {
-                    onIntent(SearchIntent.SubmitSearch)
-                    focusManager.clearFocus()
+                    if (!state.isOffline) {
+                        onIntent(SearchIntent.SubmitSearch)
+                        focusManager.clearFocus()
+                    }
                 },
+                enabled = !state.isOffline,
                 modifier = Modifier
                     .size(48.dp)
-                    .background(color = MaterialTheme.colorScheme.primary, shape = CircleShape)
+                    .background(
+                        color = if (state.isOffline)
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                        else
+                            MaterialTheme.colorScheme.primary,
+                        shape = CircleShape
+                    )
             ) {
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = "Search",
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = if (state.isOffline)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    else
+                        MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
@@ -164,12 +224,32 @@ fun SearchScreen(
         }
 
         if (pagingItems.loadState.refresh is LoadState.Error) {
-            val error = (pagingItems.loadState.refresh as LoadState.Error).error
-            Text(
-                text = error.localizedMessage ?: stringResource(R.string.an_error_occurred),
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(16.dp)
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = if (state.isOffline)
+                        stringResource(R.string.error_check_connection)
+                    else
+                        stringResource(R.string.error_something_went_wrong),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { pagingItems.retry() }) {
+                    Text(text = stringResource(R.string.error_tap_to_retry))
+                }
+            }
         }
 
         LazyColumn(
@@ -211,12 +291,25 @@ fun SearchScreen(
 
             if (pagingItems.loadState.append is LoadState.Error) {
                 item {
-                    val error = (pagingItems.loadState.append as LoadState.Error).error
-                    Text(
-                        text = error.localizedMessage ?: stringResource(R.string.failed_to_load_more),
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.failed_to_load_more),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        TextButton(onClick = { pagingItems.retry() }) {
+                            Text(
+                                text = stringResource(R.string.error_tap_to_retry),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
             }
         }

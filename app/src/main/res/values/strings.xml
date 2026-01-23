@@ -3,4 +3,10 @@
     <string name="see_all">See all</string>
     <string name="an_error_occurred">An error occurred</string>
     <string name="failed_to_load_more">Failed to load more</string>
+    <string name="offline_banner_message">You\'re offline. Showing cached results.</string>
+    <string name="error_check_connection">Check your connection</string>
+    <string name="error_tap_to_retry">Tap to retry</string>
+    <string name="error_something_went_wrong">Something went wrong</string>
+    <string name="retry">Retry</string>
+    <string name="search_disabled_offline">Search unavailable offline</string>
 </resources>

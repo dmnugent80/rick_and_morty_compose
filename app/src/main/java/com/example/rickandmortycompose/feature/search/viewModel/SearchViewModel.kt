@@ -8,16 +8,20 @@ import androidx.paging.map
 import com.example.rickandmortycompose.feature.search.composables.SearchIntent
 import com.example.rickandmortycompose.feature.search.composables.SearchResultItem
 import com.example.rickandmortycompose.model.Character
+import com.example.rickandmortycompose.network.ConnectivityObserver
 import com.example.rickandmortycompose.usecase.GetAllCharactersUseCase
 import com.example.rickandmortycompose.usecase.SearchCharactersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 private sealed interface SearchMode {
@@ -30,11 +34,21 @@ private sealed interface SearchMode {
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchCharactersUseCase: SearchCharactersUseCase,
-    private val getAllCharactersUseCase: GetAllCharactersUseCase
+    private val getAllCharactersUseCase: GetAllCharactersUseCase,
+    private val connectivityObserver: ConnectivityObserver
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SearchViewState())
-    val state: StateFlow<SearchViewState> = _state
+    val state: StateFlow<SearchViewState> = combine(
+        _state,
+        connectivityObserver.isOnline
+    ) { state, isOnline ->
+        state.copy(isOffline = !isOnline)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SearchViewState()
+    )
 
     private val _searchMode = MutableStateFlow<SearchMode>(SearchMode.Idle)
 
@@ -56,6 +70,10 @@ class SearchViewModel @Inject constructor(
                 _state.value = _state.value.copy(query = intent.query)
 
             SearchIntent.SubmitSearch -> {
+                // Block search when offline - search requires network
+                if (!connectivityObserver.isOnline.value) {
+                    return
+                }
                 val query = _state.value.query
                 if (query.isNotBlank()) {
                     _state.value = _state.value.copy(isSearchActive = true)
@@ -64,6 +82,7 @@ class SearchViewModel @Inject constructor(
             }
 
             SearchIntent.SeeAll -> {
+                // "See All" works offline with cached data
                 _state.value = _state.value.copy(isSearchActive = true)
                 _searchMode.value = SearchMode.SeeAll
             }

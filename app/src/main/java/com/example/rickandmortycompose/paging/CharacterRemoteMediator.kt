@@ -89,7 +89,16 @@ class CharacterRemoteMediator(
 
             MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
         } catch (e: IOException) {
-            MediatorResult.Error(e)
+            // On network error, check if we have cached data
+            // If we do, return success and let Room serve the cached data
+            val cachedCount = characterDao.count()
+            if (cachedCount > 0 && loadType == LoadType.REFRESH) {
+                // We have cached data, return success to display it
+                MediatorResult.Success(endOfPaginationReached = false)
+            } else {
+                // No cached data, surface the error to the user
+                MediatorResult.Error(e)
+            }
         } catch (e: HttpException) {
             MediatorResult.Error(e)
         }
