@@ -8,6 +8,7 @@ import androidx.paging.map
 import com.example.rickandmortycompose.api.CharacterDto
 import com.example.rickandmortycompose.api.CharacterSearchApi
 import com.example.rickandmortycompose.db.AppDatabase
+import com.example.rickandmortycompose.db.CharacterEntity
 import com.example.rickandmortycompose.model.Character
 import com.example.rickandmortycompose.paging.CharacterPagingSource
 import com.example.rickandmortycompose.paging.CharacterRemoteMediator
@@ -47,7 +48,16 @@ class SearchRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getCharacterById(id: Int): Character {
-        return api.getCharacter(id).toCharacter()
+        // Try Room first (works offline for "See All" characters)
+        database.characterDao().getCharacterById(id)?.let { entity ->
+            return entity.toCharacter()
+        }
+
+        // Fall back to network, then cache for future offline use
+        val dto = api.getCharacter(id)
+        val character = dto.toCharacter()
+        database.characterDao().insertAll(listOf(CharacterEntity.fromCharacter(character)))
+        return character
     }
 
     private fun CharacterDto.toCharacter(): Character {
