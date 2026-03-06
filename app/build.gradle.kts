@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.rickandmortycompose"
+    namespace = "com.example.rickandmorty"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.rickandmortycompose"
+        applicationId = "com.example.rickandmorty"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -43,6 +43,11 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:domain"))
+    implementation(project(":core:data"))
+    implementation(project(":core:ui"))
+    implementation(project(":feature:search"))
+    implementation(project(":feature:detail"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -52,30 +57,15 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    implementation(libs.retrofit)
-    implementation(libs.converter.moshi)
-    implementation(libs.moshi)
-
     implementation(libs.okhttp)
-    implementation(libs.coroutines.core)
-    implementation(libs.coroutines.android)
-    implementation(libs.json)
-
-    implementation(libs.moshi.kotlin)
 
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.paging)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.coil.compose)
-    implementation(libs.paging.runtime)
     implementation(libs.paging.compose)
 
     testImplementation(libs.junit)

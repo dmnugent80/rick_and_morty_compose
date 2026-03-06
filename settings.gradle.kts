@@ -21,4 +21,9 @@ dependencyResolutionManagement {
 
 rootProject.name = "RickAndMortyCompose"
 include(":app")
+include(":core:domain")
+include(":core:data")
+include(":core:ui")
+include(":feature:search")
+include(":feature:detail")
  
