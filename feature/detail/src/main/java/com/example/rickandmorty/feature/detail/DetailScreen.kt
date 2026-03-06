@@ -40,6 +40,7 @@ import coil.compose.AsyncImage
 import com.example.rickandmorty.core.domain.model.Character
 import com.example.rickandmorty.core.ui.theme.RickAndMortyComposeTheme
 
+@Suppress("LongMethod") // TODO@Dan
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun DetailScreen(

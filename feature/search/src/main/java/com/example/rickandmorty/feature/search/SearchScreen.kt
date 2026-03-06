@@ -60,6 +60,7 @@ import com.example.rickandmorty.core.ui.theme.RickAndMortyBlue
 import com.example.rickandmorty.core.ui.theme.RickAndMortyComposeTheme
 import kotlinx.coroutines.flow.flowOf
 
+@Suppress("LongMethod") // TODO@Dan
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchScreen(

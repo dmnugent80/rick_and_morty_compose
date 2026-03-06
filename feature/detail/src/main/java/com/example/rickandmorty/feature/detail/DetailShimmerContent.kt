@@ -107,8 +107,8 @@ private fun ShimmerInfoCard(
     }
 }
 
-@Preview(showBackground = true)
 @Composable
+@Preview(showBackground = true)
 private fun DetailShimmerContentPreview() {
     RickAndMortyComposeTheme {
         DetailShimmerContent()

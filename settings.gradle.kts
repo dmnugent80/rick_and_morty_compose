@@ -26,4 +26,3 @@ include(":core:data")
 include(":core:ui")
 include(":feature:search")
 include(":feature:detail")
- 

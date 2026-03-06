@@ -79,7 +79,9 @@ class DetailViewModelTest {
 
     @Test
     fun `retry triggers reload`() = runTest {
-        coEvery { getCharacterByIdUseCase(1) } throws RuntimeException("First error") andThen CharacterFixtures.rickSanchez
+        coEvery {
+            getCharacterByIdUseCase(1)
+        } throws RuntimeException("First error") andThen CharacterFixtures.rickSanchez
 
         val viewModel = createViewModel(characterId = 1)
         assertEquals("First error", viewModel.state.value.error)
