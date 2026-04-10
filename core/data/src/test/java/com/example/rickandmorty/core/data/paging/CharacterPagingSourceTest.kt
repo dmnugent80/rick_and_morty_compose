@@ -12,6 +12,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 
 class CharacterPagingSourceTest {
 
@@ -111,8 +112,8 @@ class CharacterPagingSourceTest {
     }
 
     @Test
-    fun `load returns error on API exception`() = runTest {
-        coEvery { api.searchCharacters(any(), any()) } throws RuntimeException("Network error")
+    fun `load returns error on API IOException`() = runTest {
+        coEvery { api.searchCharacters(any(), any()) } throws IOException("Network error")
         pagingSource = CharacterPagingSource(api, null)
 
         val result = pagingSource.load(

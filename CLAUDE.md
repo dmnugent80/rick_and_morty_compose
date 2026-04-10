@@ -19,6 +19,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Clean build
 ./gradlew clean assembleDebug
+
+# Run Detekt on all modules
+./gradlew detektAll
 ```
 
 ## Architecture
@@ -153,3 +156,10 @@ Custom dark Rick and Morty theme in `ui/theme/`. Always uses dark color scheme:
 - Secondary: `#DAA520` (Goldenrod/Yellow accent)
 - Background: `#0A0A0A` (Near black)
 - Surface: `#1A1A1A` (Dark gray)
+
+
+### Instructions
+
+Minimize tool calls. Don't re-read files you've already read this session. Don't read files for context unless I explicitly ask. Work from what's already in the conversation. Batch all changes into as few operations as possible.
+
+Run detektAll after making changes and fix any formatting errors
